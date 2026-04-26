@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marisquería de Lujo - Carta Digital</title>
+    <script>
+      (function() {
+        // Protected environment setup
+        const nativeFetch = window.fetch;
+        
+        // Define a safe global object that doesn't trigger read-only Window property errors
+        if (typeof global === 'undefined') {
+          const safeGlobal = Object.create(window);
+          // Ensure fetch in our global sandbox is the native one, but locally overridable
+          Object.defineProperty(safeGlobal, 'fetch', {
+            value: nativeFetch,
+            writable: true,
+            configurable: true
+          });
+          window.global = safeGlobal;
+        }
+        
+        if (typeof process === 'undefined') {
+          window.process = { 
+            env: { NODE_ENV: 'development' },
+            nextTick: (fn) => setTimeout(fn, 0),
+            browser: true,
+            cwd: () => '/',
+            version: ''
+          };
+        }
+
+        // Defensive: Prevent scripts from overwriting window.fetch directly
+        // but only if it's already an own property or configurable
+        try {
+          const desc = Object.getOwnPropertyDescriptor(window, 'fetch');
+          if (desc && desc.configurable) {
+            Object.defineProperty(window, 'fetch', {
+              get: () => nativeFetch,
+              set: (v) => { console.warn('Blocked attempt to overwrite window.fetch'); },
+              configurable: false
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
