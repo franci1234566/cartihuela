@@ -9,7 +9,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 45,
     category: 'Mariscos Frescos',
     allergens: ['Crustáceos'],
-    image: 'https://images.unsplash.com/photo-1590412356515-b7709a3adad2?auto=format&fit=crop&q=80&w=800',
+    image: 'https://laxernadelmar.com/wp-content/uploads/2018/08/gamba.jpg',
     featured: true
   },
   {
@@ -19,7 +19,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 6.5,
     category: 'Mariscos Frescos',
     allergens: ['Moluscos'],
-    image: 'https://images.unsplash.com/photo-1544527031-64e0dddf7290?auto=format&fit=crop&q=80&w=800',
+    image: 'https://static.wixstatic.com/media/28b472_3a7e70cc6cd3489ba557926666ec5552~mv2.jpg/v1/fill/w_480,h_320,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/28b472_3a7e70cc6cd3489ba557926666ec5552~mv2.jpg',
   },
   {
     id: '3',
@@ -28,7 +28,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 24,
     category: 'Entrantes',
     allergens: ['Crustáceos'],
-    image: 'https://images.unsplash.com/photo-1534080564607-c98752441051?auto=format&fit=crop&q=80&w=800',
+    image: 'https://img2.rtve.es/n/16065816?w=1600',
   },
   {
     id: '4',
@@ -37,7 +37,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 18,
     category: 'Entrantes',
     allergens: ['Moluscos'],
-    image: 'https://images.unsplash.com/photo-1626202133282-36e2f1db8e70?auto=format&fit=crop&q=80&w=800',
+    image: 'https://i.blogs.es/58a40a/navajas_aumen/840_560.jpg',
   },
   {
     id: '5',
@@ -46,7 +46,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 32, // por persona
     category: 'Arroces',
     allergens: ['Crustáceos', 'Pescado', 'Moluscos'],
-    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=800',
+    image: 'https://canalcocina.es/medias/_cache/zoom-fda9f4e32f5d1ad4f42ec9bd3597cb2e-920-518.jpg',
     featured: true
   },
   {
@@ -56,7 +56,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 38,
     category: 'Pescados',
     allergens: ['Pescado'],
-    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=800',
+    image: 'https://www.plenussupermercados.es/wp-content/uploads/2024/04/rodaballo-a-la-gallega.jpg',
   },
   {
     id: '7',
@@ -65,7 +65,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 52,
     category: 'Mariscos Frescos',
     allergens: ['Crustáceos', 'Gluten'],
-    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&q=80&w=800',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiybNp9aswHxmqmwaKcitkxRu9oPXr6hNH7wm4vddHv1kJ7_FrNLmHEQQxjUxXRY2fMaAW357hQ8i_Y1ZawQB6USN9T2MYfaUdQchygeUzXlQzEN60-q-OrK7nFqkSbwhxgJ6ydCHOYl5s/w1200-h630-p-k-no-nu/Cigalas+al+horno-12.jpg',
   },
   {
     id: '8',
@@ -74,7 +74,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 26,
     category: 'Arroces',
     allergens: ['Gluten', 'Crustáceos', 'Pescado', 'Huevos'],
-    image: 'https://images.unsplash.com/photo-1512058560366-cd24270083cd?auto=format&fit=crop&q=80&w=800',
+    image: 'https://www.pastaslacatalana.com/wp-content/uploads/2017/09/fideua-de-gandia.jpg',
   },
   {
     id: '9',
@@ -83,7 +83,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 28,
     category: 'Entrantes',
     allergens: ['Crustáceos', 'Moluscos'],
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800',
+    image: 'https://canalcocina.es/medias/_cache/zoom-9ff14f585af4f7f45d0ebef86034c628-920-518.jpg',
   },
   {
     id: '10',
@@ -92,7 +92,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 48,
     category: 'Pescados',
     allergens: ['Pescado'],
-    image: 'https://images.unsplash.com/photo-1534948665115-3bd585d85c49?auto=format&fit=crop&q=80&w=800',
+    image: 'https://i.blogs.es/6c0ecd/lubina_sal-copia/832_435.jpg',
   },
   {
     id: '11',
@@ -101,7 +101,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 22,
     category: 'Entrantes',
     allergens: ['Moluscos', 'Gluten', 'Dióxido de azufre'],
-    image: 'https://images.unsplash.com/photo-1623961954109-9689404f6974?auto=format&fit=crop&q=80&w=800',
+    image: 'https://canalcocina.es/medias/_cache/zoom-5974cbb7dcfad79e2d87904f0d05471a-920-518.jpg',
   },
   {
     id: '12',
@@ -173,7 +173,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 20,
     category: 'Entrantes',
     allergens: ['Moluscos'],
-    image: 'https://images.unsplash.com/photo-1559132109-17bf48696ab7?auto=format&fit=crop&q=80&w=800',
+    image: 'https://gourmet.expob2b.es/uploads/fotos_noticias/2018/01/w800px_16824-132866-ensalada-de-carpaccio-de-pulpo-con-aceite-de-pimenton.jpg',
   },
   {
     id: '20',
@@ -236,7 +236,7 @@ export const MENU_DATA: MenuItem[] = [
     price: 16,
     category: 'Entrantes',
     allergens: ['Pescado'],
-    image: 'https://live.staticflickr.com/3925/14773301108_666733aff5_b.jpg',
+    image: 'https://www.conservasnardin.com/img/cms/escalivada-anchoas-2.jpg',
   },
   {
     id: '27',
