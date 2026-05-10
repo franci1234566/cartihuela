@@ -27,11 +27,11 @@ import {
   List as ListIcon,
   ArrowUpDown,
   Clock3,
-  Globe // Importado para el selector de idiomas
+  Globe
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { MENU_DATA, LANGUAGES } from './constants'; // Añadido LANGUAGES
-import { Category, MenuItem, Allergen, Language } from './types'; // Añadido Language
+import { motion, AnimatePresence } from 'framer-motion';
+import { MENU_DATA, LANGUAGES } from './constants';
+import { Category, MenuItem, Allergen, Language } from './types';
 
 const CATEGORIES: Category[] = ['Entrantes', 'Mariscos Frescos', 'Arroces', 'Pescados', 'Vinos', 'Postres'];
 
@@ -63,13 +63,20 @@ const INITIAL_RES_DATA = {
 export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'Todos'>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('es'); // Estado para el idioma
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>('es');
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isReservationOpen, setIsReservationOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [resData, setResData] = useState(INITIAL_RES_DATA);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const logoPlaceholder = "https://live.staticflickr.com/3925/14773301108_666733aff5_b.jpg";
 
@@ -82,10 +89,11 @@ export default function App() {
 
   const filteredMenu = useMemo(() => {
     let result = MENU_DATA.filter(item => {
+      const name = item.name[selectedLanguage] || '';
+      const desc = item.description[selectedLanguage] || '';
       const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
-      // Búsqueda multi-idioma: busca en el idioma actualmente seleccionado
-      const matchesSearch = item.name[selectedLanguage].toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description[selectedLanguage].toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          desc.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
 
@@ -93,311 +101,364 @@ export default function App() {
       const catA = CATEGORIES.indexOf(a.category);
       const catB = CATEGORIES.indexOf(b.category);
       if (catA !== catB) return catA - catB;
-      return a.name[selectedLanguage].localeCompare(b.name[selectedLanguage]);
+      return (a.name[selectedLanguage] || '').localeCompare(b.name[selectedLanguage] || '');
     });
 
     return result;
   }, [selectedCategory, searchQuery, selectedLanguage]);
 
   return (
-    <div className="min-h-screen bg-sea-white selection:bg-sea-blue selection:text-white border-x border-ocean-dark/10 max-w-[1200px] mx-auto flex flex-col md:flex-row shadow-2xl relative overflow-hidden">
-      {/* Decorative Background Silhouettes */}
+    <div className="min-h-screen bg-sea-white selection:bg-sea-blue selection:text-white border-x border-ocean-dark/10 max-w-[1400px] mx-auto flex flex-col md:flex-row shadow-2xl relative overflow-x-hidden">
+      
+      {/* CAPA DECORATIVA: Siluetas de fondo con Parallax suave */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <Anchor className="absolute -top-10 -left-10 w-64 h-64 text-sea-blue/10 rotate-12" />
-        <Ship className="absolute top-1/4 -right-16 w-80 h-80 text-sea-blue/5 -rotate-12" />
-        <Fish className="absolute bottom-1/4 -left-12 w-48 h-48 text-sea-blue/10 rotate-45" />
-        <Shell className="absolute -bottom-10 right-1/4 w-32 h-32 text-sea-blue/10" />
-        <Waves className="absolute bottom-0 left-0 w-full h-32 text-sea-blue/5" />
+        <motion.div style={{ y: scrolled ? -20 : 0 }} className="absolute -top-20 -left-20 opacity-[0.03] text-ocean-dark">
+          <Anchor size={400} rotate={15} />
+        </motion.div>
+        <motion.div style={{ y: scrolled ? 40 : 0 }} className="absolute top-1/3 -right-32 opacity-[0.02] text-sea-blue">
+          <Ship size={500} rotate={-10} />
+        </motion.div>
+        <motion.div style={{ x: scrolled ? 30 : 0 }} className="absolute bottom-1/4 -left-20 opacity-[0.04] text-ocean-dark">
+          <Fish size={300} />
+        </motion.div>
+        <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-sea-blue/5 to-transparent" />
       </div>
 
-      {/* Selector de Idioma Flotante Desktop */}
-      <div className="fixed top-6 right-6 z-[60] hidden lg:block">
+      {/* SELECTOR DE IDIOMA: Desktop Flotante */}
+      <div className="fixed top-8 right-10 z-[100] hidden lg:block">
         <div className="relative">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
-            className="bg-white/90 backdrop-blur-md border border-ocean-dark/10 p-3 rounded-full shadow-lg hover:shadow-sea-blue/20 transition-all flex items-center gap-2 group"
+            className="bg-white/80 backdrop-blur-xl border border-ocean-dark/10 p-4 rounded-2xl shadow-2xl flex items-center gap-3 group hover:border-sea-blue/30 transition-all"
           >
-            <Globe className="w-5 h-5 text-sea-blue group-hover:rotate-12 transition-transform" />
-            <span className="text-xs font-bold uppercase tracking-widest text-ocean-dark">
-              {LANGUAGES.find(l => l.code === selectedLanguage)?.code}
-            </span>
-          </button>
+            <div className="bg-sea-blue/10 p-2 rounded-lg group-hover:bg-sea-blue group-hover:text-white transition-colors">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-[10px] uppercase tracking-widest text-ocean-dark/40 font-bold">Idioma</span>
+              <span className="text-sm font-bold text-ocean-dark uppercase">
+                {LANGUAGES.find(l => l.code === selectedLanguage)?.name}
+              </span>
+            </div>
+          </motion.button>
 
           <AnimatePresence>
             {isLanguageMenuOpen && (
               <motion.div 
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                initial={{ opacity: 0, y: 15, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute right-0 mt-3 bg-white border border-ocean-dark/10 rounded-2xl shadow-2xl p-2 min-w-[160px] overflow-hidden"
+                exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                className="absolute right-0 mt-4 bg-white/95 backdrop-blur-2xl border border-ocean-dark/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-3 min-w-[200px] overflow-hidden"
               >
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setSelectedLanguage(lang.code);
-                      setIsLanguageMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-colors ${selectedLanguage === lang.code ? 'bg-sea-blue/10 text-sea-blue font-bold' : 'hover:bg-sea-blue-light text-ocean-dark/70'}`}
-                  >
-                    <span className="text-lg">{lang.flag}</span>
-                    <span>{lang.name}</span>
-                  </button>
-                ))}
+                <div className="grid grid-cols-1 gap-1">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { setSelectedLanguage(lang.code); setIsLanguageMenuOpen(false); }}
+                      className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all ${
+                        selectedLanguage === lang.code 
+                        ? 'bg-sea-blue text-white font-bold shadow-lg shadow-sea-blue/20' 
+                        : 'hover:bg-sea-blue/5 text-ocean-dark/70 hover:text-ocean-dark'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </div>
+                      {selectedLanguage === lang.code && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex w-72 border-r border-ocean-dark/10 flex-col sticky top-0 h-screen bg-sea-blue-light/30 backdrop-blur-sm">
-        <div className="p-8 space-y-8 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 border-2 border-ocean-dark rounded-full flex items-center justify-center p-1 shrink-0 bg-white shadow-lg shadow-sea-blue/10">
-              <div className="w-full h-full border border-ocean-dark/20 rounded-full flex items-center justify-center">
-                <span className="text-ocean-dark font-serif text-xl tracking-tighter">LC</span>
+      {/* SIDEBAR: Desktop */}
+      <aside className="hidden lg:flex w-80 border-r border-ocean-dark/5 flex-col sticky top-0 h-screen bg-white/40 backdrop-blur-md z-20">
+        <div className="p-10 space-y-12 relative z-10 flex flex-col h-full">
+          {/* Logo Brand */}
+          <div className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-5"
+            >
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-sea-blue/20 rounded-full blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                <div className="w-14 h-14 border-2 border-ocean-dark rounded-full flex items-center justify-center p-1 bg-white relative shadow-xl shadow-sea-blue/10">
+                  <span className="text-ocean-dark font-serif text-2xl tracking-tighter">LC</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-widest uppercase leading-tight text-ocean-black">La <span className="text-sea-blue italic">Carihuela</span></h1>
-              <p className="text-[9px] tracking-[0.3em] uppercase opacity-80 font-semibold font-sans text-ocean-dark">Tradición Marinera</p>
-            </div>
-          </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-ocean-black leading-none">
+                  LA <span className="text-sea-blue font-serif italic block text-3xl mt-1">Carihuela</span>
+                </h1>
+                <div className="h-0.5 w-12 bg-sea-blue mt-2" />
+              </div>
+            </motion.div>
 
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold text-ocean-dark uppercase tracking-[0.2em] mb-4">Categorías</p>
-            <button 
-              onClick={() => setSelectedCategory('Todos')}
-              className={`w-full text-left py-2 px-4 rounded text-sm transition-all ${selectedCategory === 'Todos' ? 'bg-sea-blue text-white font-semibold shadow-md' : 'hover:bg-sea-blue/10 text-ocean-black/80 hover:text-ocean-black'}`}
-            >
-              {selectedLanguage === 'es' ? 'Todos los Manjares' : 'All Delicacies'}
-            </button>
-            {CATEGORIES.map(cat => (
+            {/* Navigation Categories */}
+            <nav className="space-y-1.5 pt-4">
+              <p className="text-[10px] font-black text-ocean-dark/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <span className="w-4 h-[1px] bg-ocean-dark/20" />
+                Categorías
+              </p>
               <button 
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`w-full text-left py-2 px-4 rounded text-sm transition-all ${selectedCategory === cat ? 'bg-sea-blue text-white font-semibold shadow-md' : 'hover:bg-sea-blue/10 text-ocean-black/80 hover:text-ocean-black'}`}
+                onClick={() => setSelectedCategory('Todos')}
+                className={`w-full flex items-center justify-between py-3 px-5 rounded-2xl text-sm transition-all group ${
+                  selectedCategory === 'Todos' 
+                  ? 'bg-ocean-dark text-white font-bold shadow-xl shadow-ocean-dark/20' 
+                  : 'hover:bg-sea-blue/10 text-ocean-dark/60 hover:text-ocean-black'
+                }`}
               >
-                {cat}
+                <div className="flex items-center gap-3">
+                  <LayoutGrid className={`w-4 h-4 ${selectedCategory === 'Todos' ? 'text-sea-blue' : 'opacity-40'}`} />
+                  {selectedLanguage === 'es' ? 'Carta Completa' : 'Full Menu'}
+                </div>
+                <ChevronRight className={`w-3 h-3 transition-transform ${selectedCategory === 'Todos' ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
               </button>
-            ))}
+
+              {CATEGORIES.map(cat => (
+                <button 
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`w-full flex items-center justify-between py-3 px-5 rounded-2xl text-sm transition-all group ${
+                    selectedCategory === cat 
+                    ? 'bg-ocean-dark text-white font-bold shadow-xl shadow-ocean-dark/20' 
+                    : 'hover:bg-sea-blue/10 text-ocean-dark/60 hover:text-ocean-black'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-1 h-1 rounded-full transition-all ${selectedCategory === cat ? 'bg-sea-blue scale-[3]' : 'bg-ocean-dark/20'}`} />
+                    {cat}
+                  </div>
+                  <ChevronRight className={`w-3 h-3 transition-transform ${selectedCategory === cat ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                </button>
+              ))}
+            </nav>
           </div>
 
-          <div className="pt-8">
-            <button 
-              onClick={() => setIsReservationOpen(true)}
-              className="w-full flex items-center justify-center gap-3 bg-ocean-dark text-white py-4 px-6 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-ocean-black transition-all shadow-lg shadow-ocean-dark/20 group"
-            >
-              <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              {selectedLanguage === 'es' ? 'Reservar Mesa' : 'Book a Table'}
-            </button>
-          </div>
-        </div>
+          {/* Reserva Sidebar */}
+          <div className="mt-auto space-y-6">
+             <div className="bg-ocean-dark rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-ocean-dark/40">
+                <Anchor className="absolute -right-6 -bottom-6 w-24 h-24 text-white/5 -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
+                <p className="text-[10px] uppercase tracking-widest font-bold text-sea-blue mb-2">Reserva VIP</p>
+                <h4 className="text-lg font-serif italic mb-4 leading-tight">Asegure su mesa frente al mar</h4>
+                <button 
+                  onClick={() => setIsReservationOpen(true)}
+                  className="w-full py-3 bg-sea-blue text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-ocean-dark transition-all flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Reservar Ahora
+                </button>
+             </div>
 
-        <div className="mt-auto p-8 border-t border-ocean-dark/10 bg-sea-blue-light/50">
-          <p className="text-[9px] uppercase tracking-widest opacity-80 mb-4 font-bold text-ocean-dark">Atención al Cliente</p>
-          <div className="flex items-center gap-3 text-ocean-black">
-            <Phone className="w-5 h-5 text-sea-blue" />
-            <p className="text-lg font-serif italic">+34 647 753 664</p>
+             <div className="flex items-center gap-4 px-2">
+                <div className="w-10 h-10 rounded-full bg-sea-blue/10 flex items-center justify-center text-sea-blue">
+                  <Phone size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] uppercase font-bold text-ocean-dark/40">Contacto Directo</span>
+                  <span className="text-sm font-bold text-ocean-black">+34 647 753 664</span>
+                </div>
+             </div>
           </div>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col relative z-10">
-        {/* Mobile / Shared Header */}
+      {/* BLOQUE CENTRAL: Header Móvil y Contenido */}
+      <div className="flex-1 flex flex-col relative z-10 bg-white/20">
+        {/* HEADER MÓVIL: Sticky con efecto Glassmorphism */}
         <header className="flex flex-col lg:flex-row items-center justify-between px-6 lg:px-10 py-5 border-b border-ocean-dark/10 bg-white/90 backdrop-blur-md sticky top-0 z-50">
           <div className="flex items-center gap-4 lg:hidden w-full justify-between">
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => setIsMenuOpen(true)}
-                className="p-2 -ml-2 text-ocean-black hover:text-sea-blue transition-colors"
-                aria-label="Menú"
+                onClick={() => setIsMenuOpen(true)} 
+                className="p-2 -ml-2 text-ocean-black bg-sea-blue/5 rounded-xl active:scale-90 transition-transform"
               >
                 <MenuIcon className="w-6 h-6" />
               </button>
               <div className="w-10 h-10 border-2 border-ocean-dark rounded-full flex items-center justify-center p-1 bg-white">
-                <div className="w-full h-full border border-ocean-dark/20 rounded-full flex items-center justify-center">
-                  <span className="text-ocean-dark font-serif text-sm">LC</span>
-                </div>
+                <span className="text-ocean-dark font-serif text-sm">LC</span>
               </div>
               <h1 className="text-base font-bold tracking-widest uppercase italic text-ocean-dark">La <span className="text-sea-blue not-italic">Carihuela</span></h1>
             </div>
             
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
-                className="p-2 bg-sea-blue-light text-sea-blue rounded-full"
+                onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)} 
+                className="p-2.5 bg-sea-blue-light text-sea-blue rounded-full active:scale-95 transition-all"
               >
                 <Globe className="w-5 h-5" />
               </button>
               <button 
-                onClick={() => setIsReservationOpen(true)}
-                className="p-2.5 bg-sea-blue text-white rounded-full shadow-lg shadow-sea-blue/20"
+                onClick={() => setIsReservationOpen(true)} 
+                className="p-3 bg-sea-blue text-white rounded-full shadow-lg shadow-sea-blue/30 active:scale-95 transition-all"
               >
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-5 h-5" />
               </button>
             </div>
           </div>
 
+          {/* MENÚ IDIOMA MÓVIL (DESPLEGABLE BAJO EL HEADER) */}
           <AnimatePresence>
             {isLanguageMenuOpen && (
               <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="lg:hidden w-full bg-white border-b border-ocean-dark/10 p-4 grid grid-cols-3 gap-2 mt-2"
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                exit={{ opacity: 0, height: 0 }}
+                className="lg:hidden w-full overflow-hidden bg-white/50 backdrop-blur-sm"
               >
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setSelectedLanguage(lang.code);
-                      setIsLanguageMenuOpen(false);
-                    }}
-                    className={`flex flex-col items-center p-2 rounded-xl border ${selectedLanguage === lang.code ? 'border-sea-blue bg-sea-blue/5' : 'border-transparent'}`}
-                  >
-                    <span className="text-2xl mb-1">{lang.flag}</span>
-                    <span className="text-[10px] font-bold uppercase">{lang.code}</span>
-                  </button>
-                ))}
+                <div className="p-4 grid grid-cols-3 gap-3">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { setSelectedLanguage(lang.code); setIsLanguageMenuOpen(false); }}
+                      className={`flex flex-col items-center gap-1 py-3 rounded-2xl border transition-all ${
+                        selectedLanguage === lang.code 
+                        ? 'border-sea-blue bg-sea-blue text-white font-bold' 
+                        : 'border-ocean-dark/10 bg-white text-ocean-dark/60'
+                      }`}
+                    >
+                      <span className="text-2xl">{lang.flag}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{lang.code}</span>
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
+          {/* TÍTULO DE SECCIÓN (DESKTOP) */}
           <div className="hidden lg:block">
-             <h2 className="text-2xl font-serif italic text-ocean-dark">
-               {selectedCategory === 'Todos' ? (selectedLanguage === 'es' ? 'Nuestra Carta' : 'Our Menu') : selectedCategory}
+             <h2 className="text-3xl font-serif italic text-ocean-dark flex items-center gap-4">
+               <Waves className="w-8 h-8 text-sea-blue animate-pulse" />
+               {selectedCategory === 'Todos' ? (selectedLanguage === 'es' ? 'Nuestra Selección' : 'Our Selection') : selectedCategory}
              </h2>
           </div>
 
-          <div className="flex-1 max-w-md mx-auto lg:mx-8 w-full group mt-4 lg:mt-0">
+          {/* BARRA DE BÚSQUEDA DINÁMICA */}
+          <div className="flex-1 max-w-md mx-auto lg:mx-8 w-full mt-4 lg:mt-0 relative group">
+            <div className="absolute inset-0 bg-sea-blue/20 rounded-full blur-md opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
             <div className="relative">
               <input 
                 type="text" 
-                placeholder={selectedLanguage === 'es' ? "Buscar en la carta..." : "Search menu..."} 
-                className="w-full bg-sea-blue-light border border-ocean-dark/10 rounded-full py-2 px-6 text-sm focus:outline-none focus:border-sea-blue focus:ring-4 focus:ring-sea-blue/5 transition-all text-ocean-black placeholder:text-ocean-dark/30 shadow-inner"
+                placeholder={selectedLanguage === 'es' ? "Buscar delicias del mar..." : "Search seafood delights..."} 
+                className="w-full bg-sea-blue-light border border-ocean-dark/10 rounded-full py-3.5 px-6 text-sm focus:outline-none focus:border-sea-blue focus:bg-white transition-all text-ocean-black placeholder:text-ocean-dark/30 shadow-inner"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-ocean-dark opacity-30 group-focus-within:opacity-100 group-focus-within:text-sea-blue transition-all" />
-            </div>
-          </div>
-
-          <div className="hidden lg:block text-right ml-4">
-            <p className="text-[10px] uppercase tracking-widest opacity-80 mb-1 text-ocean-black">Almería, España</p>
-            <div className="flex items-center justify-end gap-2 text-sea-blue">
-              <Waves className="w-4 h-4" />
-              <span className="text-xs font-bold tracking-widest">PRODUCTO FRESCO</span>
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-sea-blue rounded-full text-white">
+                <Search className="w-3 h-3" />
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Mobile Menu Overlay */}
+        {/* OVERLAY MENÚ MÓVIL (LATERAL) */}
         <AnimatePresence>
           {isMenuOpen && (
             <>
               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsMenuOpen(false)}
-                className="fixed inset-0 bg-ocean-black/60 backdrop-blur-sm z-[60] lg:hidden"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+                onClick={() => setIsMenuOpen(false)} 
+                className="fixed inset-0 bg-ocean-black/80 backdrop-blur-md z-[110] lg:hidden" 
               />
               <motion.div 
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
+                initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} 
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed top-0 left-0 bottom-0 w-4/5 max-w-xs bg-white z-[70] lg:hidden flex flex-col shadow-2xl"
+                className="fixed top-0 left-0 bottom-0 w-[85%] max-w-xs bg-white z-[120] lg:hidden flex flex-col shadow-[20px_0_60px_rgba(0,0,0,0.3)]"
               >
-                <div className="p-6 border-b border-ocean-dark/5 flex justify-between items-center bg-sea-blue-light/30">
+                <div className="p-8 border-b border-ocean-dark/5 flex justify-between items-center bg-sea-blue-light/30">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 border border-ocean-dark rounded-full flex items-center justify-center p-0.5 bg-white">
-                      <span className="text-ocean-dark font-serif text-[10px]">LC</span>
-                    </div>
-                    <span className="text-sm font-bold tracking-widest uppercase text-ocean-dark">Menú</span>
+                    <Anchor className="w-5 h-5 text-sea-blue" />
+                    <span className="text-xs font-black tracking-[0.3em] uppercase text-ocean-dark">Navegación</span>
                   </div>
-                  <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-sea-blue-light rounded-full text-ocean-dark/40">
-                    <X className="w-5 h-5" />
-                  </button>
+                  <button onClick={() => setIsMenuOpen(false)} className="p-2 bg-white rounded-full shadow-sm"><X className="w-5 h-5 text-ocean-dark" /></button>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-2">
-                  <p className="text-[10px] font-bold text-ocean-dark/40 uppercase tracking-[0.2em] mb-4">Nuestras Categorías</p>
+                <div className="flex-1 overflow-y-auto p-6 space-y-3">
                   <button 
-                    onClick={() => { setSelectedCategory('Todos'); setIsMenuOpen(false); }}
-                    className={`w-full text-left py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-between ${selectedCategory === 'Todos' ? 'bg-sea-blue text-white font-bold shadow-lg shadow-sea-blue/20' : 'text-ocean-black hover:bg-sea-blue-light'}`}
+                    onClick={() => { setSelectedCategory('Todos'); setIsMenuOpen(false); }} 
+                    className={`w-full flex items-center justify-between py-4 px-6 rounded-2xl text-sm transition-all ${
+                      selectedCategory === 'Todos' ? 'bg-sea-blue text-white font-bold shadow-xl shadow-sea-blue/30' : 'bg-sea-blue-light/50 text-ocean-black'
+                    }`}
                   >
-                    {selectedLanguage === 'es' ? 'Todos los Manjares' : 'All Delicacies'}
-                    {selectedCategory === 'Todos' && <ChevronRight className="w-4 h-4" />}
+                    <span>Todos los Manjares</span>
+                    <LayoutGrid size={16} />
                   </button>
                   {CATEGORIES.map(cat => (
                     <button 
-                      key={cat}
-                      onClick={() => { setSelectedCategory(cat); setIsMenuOpen(false); }}
-                      className={`w-full text-left py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-between ${selectedCategory === cat ? 'bg-sea-blue text-white font-bold shadow-lg shadow-sea-blue/20' : 'text-ocean-black hover:bg-sea-blue-light'}`}
+                      key={cat} 
+                      onClick={() => { setSelectedCategory(cat); setIsMenuOpen(false); }} 
+                      className={`w-full flex items-center justify-between py-4 px-6 rounded-2xl text-sm transition-all ${
+                        selectedCategory === cat ? 'bg-sea-blue text-white font-bold shadow-xl shadow-sea-blue/30' : 'bg-sea-blue-light/50 text-ocean-black'
+                      }`}
                     >
-                      {cat}
-                      {selectedCategory === cat && <ChevronRight className="w-4 h-4" />}
+                      <span>{cat}</span>
+                      <div className={`w-2 h-2 rounded-full ${selectedCategory === cat ? 'bg-white' : 'bg-sea-blue'}`} />
                     </button>
                   ))}
                 </div>
-
-                <div className="p-6 bg-sea-blue-light/50 border-t border-ocean-dark/5">
-                   <button 
-                    onClick={() => { setIsReservationOpen(true); setIsMenuOpen(false); }}
-                    className="w-full bg-ocean-dark text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest"
-                  >
-                    {selectedLanguage === 'es' ? 'Reservar Mesa' : 'Book a Table'}
-                  </button>
+                <div className="p-8 bg-ocean-dark text-white text-center">
+                   <p className="text-[10px] uppercase tracking-widest opacity-60 mb-2">Reservas Telefónicas</p>
+                   <p className="text-xl font-serif italic">+34 647 753 664</p>
                 </div>
               </motion.div>
             </>
           )}
         </AnimatePresence>
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 lg:p-10 bg-sea-blue-light/50 relative shadow-inner">
-          <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-0">
-             <Waves className="w-full h-full text-ocean-dark" />
-          </div>
+        {/* CONTENIDO PRINCIPAL: LISTA DE PRODUCTOS */}
+        <main className="flex-1 p-6 lg:p-12 relative">
           
+          {/* HERO TEXT DINÁMICO */}
           <motion.div 
-             initial={{ opacity: 0, y: 10 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             viewport={{ once: true }}
-             className="mb-10 text-center lg:text-left"
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="mb-16 text-center lg:text-left relative"
           >
-             <h2 className="text-4xl md:text-5xl font-serif italic mb-3 text-ocean-black">
-               {selectedLanguage === 'es' ? 'La' : 'The'} <span className="text-sea-blue">{selectedLanguage === 'es' ? 'Esencia' : 'Essence'}</span> {selectedLanguage === 'es' ? 'de la Costa' : 'of the Coast'}
+             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sea-blue/10 text-sea-blue text-[10px] font-black uppercase tracking-[0.2em] mb-6">
+                <Sparkles size={12} />
+                <span>Experiencia Gastronómica</span>
+             </div>
+             <h2 className="text-5xl md:text-7xl font-serif italic mb-6 text-ocean-black leading-[1.1]">
+               {selectedLanguage === 'es' ? 'La' : 'The'} <span className="text-sea-blue relative">
+                 {selectedLanguage === 'es' ? 'Esencia' : 'Essence'}
+                 <svg className="absolute -bottom-2 left-0 w-full h-3 text-sea-blue/20" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 25 0 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="4" /></svg>
+               </span> {selectedLanguage === 'es' ? 'de la Costa' : 'of the Coast'}
              </h2>
-             <p className="text-sm text-ocean-black/80 max-w-xl font-medium leading-relaxed">
+             <p className="text-lg text-ocean-black/60 max-w-2xl font-medium leading-relaxed italic">
                {selectedLanguage === 'es' 
-                 ? 'De la lonja a su mesa. Disfrute del sabor más auténtico de Almería con nuestra selección diaria de productos locales.' 
-                 : 'From the market to your table. Enjoy the most authentic flavor of Almería with our daily selection of local products.'}
+                 ? '"Del barco a su mesa: seleccionamos cada pieza en la lonja de Almería para garantizar una frescura inigualable."' 
+                 : '"From the boat to your table: we select each piece at the Almería fish market to guarantee unmatched freshness."'}
              </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+          {/* GRID DE PLATOS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-x-10 gap-y-16">
             <AnimatePresence mode="popLayout">
               {filteredMenu.reduce((acc: any[], item, index, array) => {
                 const isGrouped = selectedCategory === 'Todos' && searchQuery === '';
-                const showCategoryHeader = isGrouped && (index === 0 || array[index-1].category !== item.category);
+                const showHeader = isGrouped && (index === 0 || array[index-1].category !== item.category);
 
-                if (showCategoryHeader) {
+                if (showHeader) {
                   acc.push(
                     <motion.div 
-                      key={`cat-header-${item.category}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="col-span-full pt-12 first:pt-0 pb-4 mb-4 border-b border-sea-blue/20"
+                      key={`header-${item.category}`} 
+                      initial={{ opacity: 0, x: -30 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      className="col-span-full pt-16 pb-6 flex items-center gap-6"
                     >
-                      <h2 className="text-2xl font-serif italic text-ocean-dark flex items-center gap-3">
-                        <Anchor className="w-6 h-6 text-sea-blue" />
+                      <div className="h-[2px] flex-1 bg-gradient-to-r from-sea-blue to-transparent" />
+                      <h3 className="text-3xl font-serif italic text-ocean-dark flex items-center gap-3 whitespace-nowrap">
+                        <Shell className="w-8 h-8 text-sea-blue" />
                         {item.category}
-                        <div className="h-[1px] flex-1 bg-gradient-to-r from-sea-blue/20 to-transparent ml-4"></div>
-                      </h2>
+                      </h3>
+                      <div className="h-[2px] w-24 bg-sea-blue/10" />
                     </motion.div>
                   );
                 }
@@ -406,297 +467,188 @@ export default function App() {
                   <motion.div
                     key={item.id}
                     layout
-                    initial={{ opacity: 0, y: 15 }}
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-white border border-ocean-dark/10 flex overflow-hidden shadow-sm hover:shadow-xl hover:shadow-sea-blue/5 hover:border-sea-blue/30 transition-all group rounded-2xl min-h-[11rem]"
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="group relative"
                   >
-                  <div className="p-5 flex flex-col flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-2 gap-3">
-                      <h3 className="text-xl font-serif italic tracking-wide text-ocean-black group-hover:text-sea-blue transition-colors">
-                        {item.name[selectedLanguage]}
-                      </h3>
-                    </div>
-                    
-                    <p className="text-[12px] text-ocean-black/80 mb-4 font-normal leading-relaxed pr-2 flex-1">
-                      {item.description[selectedLanguage]}
-                    </p>
-
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap gap-2">
-                         {item.allergens.map((allergen) => {
-                           const ui = ALLERGEN_UI[allergen] || { icon: Info, label: '?', color: 'text-ocean-dark/40' };
-                           const AllergenIcon = ui.icon;
-                           return (
-                             <div key={allergen} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sea-blue/5 border border-sea-blue/20">
-                               <AllergenIcon className={`w-3 h-3 ${ui.color}`} />
-                               <span className="text-[9px] font-bold uppercase tracking-tighter text-ocean-dark">{allergen}</span>
-                             </div>
-                           );
-                         })}
-                      </div>
+                    {/* Tarjeta de Plato */}
+                    <div className="bg-white border border-ocean-dark/5 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-[0_30px_60px_rgba(0,102,255,0.12)] transition-all duration-500 flex flex-col h-full hover:-translate-y-2">
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-ocean-dark/5">
-                        <span className="text-ocean-black font-bold text-xl">{item.price.toLocaleString('es-ES', { minimumFractionDigits: 1 })}€</span>
-                        <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest text-sea-blue opacity-0 group-hover:opacity-100 transition-opacity">
-                           <span>MÁXIMA CALIDAD</span>
+                      {/* Imagen con Overlay */}
+                      <div className="h-64 sm:h-72 relative overflow-hidden bg-sea-blue-light/30">
+                        <motion.img 
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ duration: 0.8 }}
+                          src={item.image || logoPlaceholder} 
+                          alt={item.name[selectedLanguage]} 
+                          className="w-full h-full object-cover cursor-zoom-in"
+                          onClick={() => setFullscreenImage(item.image || logoPlaceholder)}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-ocean-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                        
+                        {/* Badge de Precio */}
+                        <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-5 py-2 rounded-2xl shadow-xl shadow-black/10">
+                          <span className="text-xl font-bold text-ocean-dark">
+                            {item.price.toLocaleString('es-ES', { minimumFractionDigits: 1 })}€
+                          </span>
+                        </div>
+
+                        {item.featured && (
+                          <div className="absolute top-6 left-6 bg-sea-blue text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2">
+                            <Award size={12} /> Sugerencia
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info del Plato */}
+                      <div className="p-8 flex flex-col flex-1 relative">
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="text-2xl font-serif italic text-ocean-black leading-tight group-hover:text-sea-blue transition-colors">
+                            {item.name[selectedLanguage]}
+                          </h4>
+                        </div>
+                        
+                        <p className="text-[13px] text-ocean-black/50 leading-relaxed font-medium mb-8 flex-1">
+                          {item.description[selectedLanguage]}
+                        </p>
+
+                        {/* Alérgenos UI */}
+                        <div className="flex flex-wrap gap-2 pt-6 border-t border-ocean-dark/5">
+                          {item.allergens.map((allergen) => {
+                            const ui = ALLERGEN_UI[allergen] || { icon: Info, label: '?', color: 'text-gray-300' };
+                            const Icon = ui.icon;
+                            return (
+                              <div key={allergen} className="group/icon relative">
+                                <div className={`w-9 h-9 rounded-full bg-sea-blue-light flex items-center justify-center border border-transparent hover:border-sea-blue/20 hover:bg-white transition-all`}>
+                                  <Icon className={`w-4 h-4 ${ui.color}`} />
+                                </div>
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-ocean-dark text-white text-[8px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                  {allergen}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div 
-                    className="w-24 sm:w-32 lg:w-40 relative overflow-hidden h-full flex-shrink-0 bg-white border-l border-ocean-dark/5"
-                    onClick={() => setFullscreenImage(item.image && item.image.trim() !== "" ? item.image : logoPlaceholder)}
-                  >
-                    <img 
-                      src={item.image && item.image.trim() !== "" ? item.image : logoPlaceholder} 
-                      alt={item.name[selectedLanguage]}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (target.src !== logoPlaceholder) target.src = logoPlaceholder;
-                      }}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                    {(!item.image || item.image.trim() === "") && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                         <div className="flex flex-col items-center gap-1">
-                           <Anchor className="w-6 h-6 text-sea-blue opacity-40" />
-                           <span className="text-[8px] font-bold text-ocean-black/30 tracking-[0.2em] uppercase">La Carihuela</span>
-                         </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 bg-ocean-dark/0 group-hover:bg-ocean-dark/10 transition-colors flex items-center justify-center pointer-events-none">
-                      <Search className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
-                    </div>
-                    {item.featured && (
-                      <div className="absolute top-2 right-2 p-1.5 bg-gold rounded-full shadow-lg">
-                        <Sparkles className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+                  </motion.div>
                 );
                 return acc;
               }, [])}
             </AnimatePresence>
           </div>
-
-          {filteredMenu.length === 0 && (
-            <div className="text-center py-20">
-              <Search className="w-12 h-12 text-gold/20 mx-auto mb-4" />
-              <h3 className="text-lg font-serif text-pearl/40 italic">
-                {selectedLanguage === 'es' ? 'No hemos encontrado lo que buscas' : 'We haven\'t found what you\'re looking for'}
-              </h3>
-              <button 
-                onClick={() => { setSearchQuery(''); setSelectedCategory('Todos'); }}
-                className="mt-2 text-gold text-sm underline underline-offset-4"
-              >
-                {selectedLanguage === 'es' ? 'Restablecer carta' : 'Reset menu'}
-              </button>
-            </div>
-          )}
         </main>
 
-        <footer className="bg-sea-blue-light border-t border-ocean-dark/10 py-16 px-6 mt-20 relative z-10">
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
-            <div className="space-y-4">
-               <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Ubicación</h4>
-               <p className="text-ocean-black text-sm leading-loose font-medium">
-                 85 Av. de Playa Serena<br/>
-                 Roquetas de Mar, Almería<br/>
-                 <span className="text-sea-blue font-black tracking-wider">ANDALUCÍA</span>
-               </p>
+        {/* FOOTER */}
+        <footer className="bg-ocean-dark py-24 px-10 mt-32 relative overflow-hidden">
+          <Anchor className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] text-white/5 rotate-12" />
+          <div className="relative z-10 max-w-4xl mx-auto text-center">
+            <div className="w-20 h-20 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-10 bg-white/5 backdrop-blur-sm">
+               <span className="text-white font-serif text-3xl">LC</span>
             </div>
-            <div className="space-y-4">
-              <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Reservas</h4>
-              <div className="flex items-center justify-center md:justify-start gap-4 text-ocean-black hover:text-sea-blue transition-colors cursor-pointer" onClick={() => setIsReservationOpen(true)}>
-                <Phone className="w-6 h-6" />
-                <p className="text-xl font-serif italic font-bold">+34 647 753 664</p>
+            <h3 className="text-white text-4xl font-serif italic mb-6">La Carihuela</h3>
+            <p className="text-sea-blue/60 text-xs uppercase tracking-[0.5em] font-black mb-12">Marisquería de Tradición · Desde 1978</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-white/80">
+              <div className="space-y-3">
+                <MapPin className="w-6 h-6 text-sea-blue mx-auto" />
+                <p className="text-sm font-medium">Paseo Marítimo, 142<br/>04007 Almería, España</p>
               </div>
-              <p className="text-ocean-dark font-bold text-[10px] uppercase tracking-tighter">Atención 24/7 vía WhatsApp</p>
+              <div className="space-y-3">
+                <Phone className="w-6 h-6 text-sea-blue mx-auto" />
+                <p className="text-sm font-medium">+34 647 753 664<br/>+34 950 123 456</p>
+              </div>
+              <div className="space-y-3">
+                <Clock className="w-6 h-6 text-sea-blue mx-auto" />
+                <p className="text-sm font-medium">Mar-Dom: 13:00 - 23:30<br/>Lunes Cerrado</p>
+              </div>
             </div>
-            <div className="space-y-4">
-              <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Horario</h4>
-              <p className="text-ocean-black text-sm leading-loose font-medium">
-                Mediodía: 13:00 - 17:00<br/>
-                Cena: 20:00 - 23:30<br/>
-                <span className="text-sea-blue font-bold">Lunes Cerrado</span>
+            
+            <div className="mt-20 pt-10 border-t border-white/5">
+              <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] font-black">
+                Desarrollado con pasión por el mar · &copy; 2026 La Carihuela
               </p>
             </div>
-          </div>
-          <div className="pt-16 mt-16 border-t border-ocean-dark/10 text-center">
-               <p className="text-ocean-black/40 text-[10px] uppercase tracking-[0.4em] font-bold">
-                &copy; 2026 La Carihuela · Excelencia Mediterránea
-              </p>
           </div>
         </footer>
 
-        {/* Fullscreen Image View */}
+        {/* MODAL FULLSCREEN IMAGE */}
         <AnimatePresence>
           {fullscreenImage && (
-            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setFullscreenImage(null)}
-                className="absolute inset-0 bg-ocean-black/95 backdrop-blur-xl" 
-              />
-              <motion.div 
-                 initial={{ opacity: 0, scale: 0.9 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 exit={{ opacity: 0, scale: 0.9 }}
-                 className="relative max-w-5xl w-full max-h-screen p-2"
-              >
-                 <button 
-                  onClick={() => setFullscreenImage(null)}
-                  className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white text-white hover:text-ocean-black rounded-full transition-all border border-white/20"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-                <img 
-                  src={fullscreenImage} 
-                  alt="Full View" 
-                  className="w-full h-full object-contain rounded-xl shadow-2xl shadow-black/50"
-                  referrerPolicy="no-referrer"
-                />
-              </motion.div>
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 lg:p-12" onClick={() => setFullscreenImage(null)}>
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-ocean-black/98 backdrop-blur-2xl" />
+               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="relative max-w-7xl max-h-full">
+                  <img src={fullscreenImage} className="rounded-3xl shadow-[0_0_100px_rgba(0,102,255,0.3)] border border-white/10" alt="Full" />
+                  <button className="absolute -top-6 -right-6 p-4 bg-white text-ocean-dark rounded-full shadow-2xl active:scale-90 transition-transform"><X /></button>
+               </motion.div>
             </div>
           )}
-        </AnimatePresence>
 
-        {/* Reservation Modal */}
-        <AnimatePresence>
+          {/* MODAL RESERVAS WHATSAPP */}
           {isReservationOpen && (
-            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsReservationOpen(false)} className="absolute inset-0 bg-ocean-dark/90 backdrop-blur-md" />
                <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsReservationOpen(false)}
-                className="absolute inset-0 bg-sea-blue/90 backdrop-blur-md" 
-              />
-              <motion.div 
-                 initial={{ opacity: 0, y: 50 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 exit={{ opacity: 0, y: 50 }}
-                 className="relative bg-white rounded-3xl w-full max-w-lg p-8 lg:p-12 shadow-2xl overflow-hidden"
-              >
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-sea-blue-light/50 -rotate-45 translate-x-16 -translate-y-16 rounded-3xl" />
-                 
-                 <div className="relative z-10">
-                   <div className="flex justify-between items-center mb-10">
-                      <div>
-                        <h3 className="text-3xl font-serif italic text-ocean-dark mb-1">Reserva de Mesa</h3>
-                        <p className="text-xs text-ocean-dark/60 tracking-wider">Gestione su velada en La Carihuela</p>
-                      </div>
-                      <button 
-                        onClick={() => setIsReservationOpen(false)}
-                        className="p-2 hover:bg-sea-blue-light rounded-full text-ocean-dark/30 transition-colors"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
-                   </div>
+                 initial={{ opacity: 0, y: 100, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 100, scale: 0.9 }}
+                 className="relative bg-white rounded-[3rem] w-full max-w-xl shadow-[0_50px_100px_rgba(0,0,0,0.4)] overflow-hidden"
+               >
+                 <div className="p-10 lg:p-14">
+                    <div className="flex justify-between items-center mb-10">
+                       <div>
+                          <p className="text-sea-blue text-[10px] font-black uppercase tracking-[0.3em] mb-2">Reserva Directa</p>
+                          <h3 className="text-4xl font-serif italic text-ocean-dark leading-none">Solicitud de Mesa</h3>
+                       </div>
+                       <button onClick={() => setIsReservationOpen(false)} className="p-3 bg-sea-blue-light text-sea-blue rounded-2xl"><X /></button>
+                    </div>
 
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Nombre y Apellidos</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ej. Juan Pérez"
-                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all"
-                          value={resData.name}
-                          onChange={(e) => setResData({...resData, name: e.target.value})}
-                        />
-                      </div>
+                    <div className="space-y-6">
+                       <div className="relative group">
+                          <input type="text" placeholder="Nombre de la reserva" className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-2xl py-4.5 px-6 text-sm focus:outline-none focus:border-sea-blue transition-all" value={resData.name} onChange={(e) => setResData({...resData, name: e.target.value})} />
+                          <Users className="absolute right-5 top-1/2 -translate-y-1/2 text-sea-blue/30 w-5 h-5" />
+                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Fecha</label>
+                       <div className="grid grid-cols-2 gap-4">
                           <div className="relative">
-                            <input 
-                              type="date" 
-                              className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all pr-12"
-                              value={resData.date}
-                              onChange={(e) => setResData({...resData, date: e.target.value})}
-                            />
+                            <input type="date" className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-2xl py-4.5 px-6 text-sm focus:outline-none" value={resData.date} onChange={(e) => setResData({...resData, date: e.target.value})} />
+                            <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 text-sea-blue/30 w-4 h-4 pointer-events-none" />
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Hora</label>
-                          <select 
-                            className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all appearance-none"
-                            value={resData.time}
-                            onChange={(e) => setResData({...resData, time: e.target.value})}
-                          >
-                            <optgroup label="Almuerzo">
-                              <option value="13:00">13:00</option>
-                              <option value="13:30">13:30</option>
-                              <option value="14:00">14:00</option>
-                              <option value="14:30">14:30</option>
-                            </optgroup>
-                            <optgroup label="Cena">
-                              <option value="20:00">20:00</option>
-                              <option value="20:30">20:30</option>
-                              <option value="21:00">21:00</option>
-                              <option value="21:30">21:30</option>
-                            </optgroup>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Comensales</label>
-                        <div className="flex items-center justify-between bg-sea-blue-light border border-sea-blue/10 rounded-xl p-2 px-6">
-                          <button 
-                            onClick={() => setResData({...resData, guests: Math.max(1, resData.guests - 1)})}
-                            className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-ocean-dark/40" />
-                            <span className="text-xl font-bold text-ocean-dark">{resData.guests}</span>
+                          <div className="relative">
+                            <select className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-2xl py-4.5 px-6 text-sm focus:outline-none appearance-none" value={resData.time} onChange={(e) => setResData({...resData, time: e.target.value})}>
+                               <option value="13:30">13:30 h</option><option value="14:00">14:00 h</option><option value="14:30">14:30 h</option>
+                               <option value="20:30">20:30 h</option><option value="21:00">21:00 h</option><option value="21:30">21:30 h</option>
+                            </select>
+                            <Clock3 className="absolute right-5 top-1/2 -translate-y-1/2 text-sea-blue/30 w-4 h-4 pointer-events-none" />
                           </div>
-                          <button 
-                            onClick={() => setResData({...resData, guests: resData.guests + 1})}
-                            className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Mensaje Extra (Opcional)</label>
-                        <textarea 
-                          placeholder="Ej. Aniversario, intolerancias específicas..."
-                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all h-24 resize-none"
+                       <div className="flex items-center justify-between bg-sea-blue-light/50 p-6 rounded-3xl border border-sea-blue/5">
+                          <span className="text-xs font-black uppercase text-ocean-dark/40 tracking-widest">Número de comensales</span>
+                          <div className="flex items-center gap-6">
+                             <button onClick={() => setResData({...resData, guests: Math.max(1, resData.guests - 1)})} className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-sea-blue active:scale-90 transition-transform"><Minus size={18} /></button>
+                             <span className="text-2xl font-serif italic font-bold text-ocean-dark w-8 text-center">{resData.guests}</span>
+                             <button onClick={() => setResData({...resData, guests: resData.guests + 1})} className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-sea-blue active:scale-90 transition-transform"><Plus size={18} /></button>
+                          </div>
+                       </div>
+
+                       <textarea 
+                          placeholder="Notas (alérgenos, celebración...)" 
+                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-3xl py-4.5 px-6 text-sm focus:outline-none h-28 resize-none"
                           value={resData.message}
                           onChange={(e) => setResData({...resData, message: e.target.value})}
-                        />
-                      </div>
+                       />
 
-                      <button 
-                        onClick={sendWhatsApp}
-                        disabled={!resData.name || !resData.date}
-                        className={`w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-bold uppercase tracking-[0.2em] transition-all shadow-xl text-sm ${resData.name && resData.date ? 'bg-[#25D366] text-white hover:scale-[1.02] shadow-green-500/20' : 'bg-ocean-dark/10 text-ocean-dark/30 cursor-not-allowed'}`}
-                      >
-                        <MessageCircle className="w-5 h-5" />
-                        Enviar Vía WhatsApp
-                      </button>
-
-                      <p className="text-[9px] text-center text-ocean-dark/30 uppercase tracking-widest italic pt-4">
-                        Será redirigido automáticamente a la aplicación WhatsApp
-                      </p>
-                   </div>
+                       <button 
+                         onClick={sendWhatsApp} 
+                         disabled={!resData.name || !resData.date}
+                         className="w-full bg-[#25D366] text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl shadow-green-500/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-30 disabled:grayscale"
+                       >
+                          <MessageCircle className="w-6 h-6" />
+                          {selectedLanguage === 'es' ? 'Confirmar por WhatsApp' : 'Confirm via WhatsApp'}
+                       </button>
+                    </div>
                  </div>
-              </motion.div>
+               </motion.div>
             </div>
           )}
         </AnimatePresence>
