@@ -1,6 +1,17 @@
 {
-  "name": "La Carihuela - Carta Digital",
-  "description": "Carta digital premium para Marisquería La Carihuela con temática marinera, filtrado dinámico y buscador de alérgenos.",
+  "name": "La Carihuela - International Menu",
+  "short_name": "La Carihuela",
+  "description": "Carta digital multi-idioma (ES/EN/DE/RU/RO/PL) para Marisquería La Carihuela. Experiencia premium con reserva vía WhatsApp y gestión de alérgenos.",
+  "lang": "es-ES",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0066FF",
+  "background_color": "#F8FAFC",
+  "categories": ["food", "lifestyle"],
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MULTILINGUAL_SUPPORT",
+    "DYNAMIC_FILTERING",
+    "WHATSAPP_RESERVATION_INTEGRATION"
+  ]
 }
