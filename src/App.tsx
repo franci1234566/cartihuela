@@ -26,11 +26,12 @@ import {
   LayoutGrid,
   List as ListIcon,
   ArrowUpDown,
-  Clock3
+  Clock3,
+  Globe // Importado para el selector de idiomas
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MENU_DATA } from './constants';
-import { Category, MenuItem, Allergen } from './types';
+import { MENU_DATA, LANGUAGES } from './constants'; // Añadido LANGUAGES
+import { Category, MenuItem, Allergen, Language } from './types'; // Añadido Language
 
 const CATEGORIES: Category[] = ['Entrantes', 'Mariscos Frescos', 'Arroces', 'Pescados', 'Vinos', 'Postres'];
 
@@ -62,6 +63,8 @@ const INITIAL_RES_DATA = {
 export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'Todos'>('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>('es'); // Estado para el idioma
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isReservationOpen, setIsReservationOpen] = useState(false);
@@ -80,21 +83,21 @@ export default function App() {
   const filteredMenu = useMemo(() => {
     let result = MENU_DATA.filter(item => {
       const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      // Búsqueda multi-idioma: busca en el idioma actualmente seleccionado
+      const matchesSearch = item.name[selectedLanguage].toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.description[selectedLanguage].toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
 
-    // Default sort by category sequence
     result.sort((a, b) => {
       const catA = CATEGORIES.indexOf(a.category);
       const catB = CATEGORIES.indexOf(b.category);
       if (catA !== catB) return catA - catB;
-      return a.name.localeCompare(b.name);
+      return a.name[selectedLanguage].localeCompare(b.name[selectedLanguage]);
     });
 
     return result;
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, selectedLanguage]);
 
   return (
     <div className="min-h-screen bg-sea-white selection:bg-sea-blue selection:text-white border-x border-ocean-dark/10 max-w-[1200px] mx-auto flex flex-col md:flex-row shadow-2xl relative overflow-hidden">
@@ -105,6 +108,46 @@ export default function App() {
         <Fish className="absolute bottom-1/4 -left-12 w-48 h-48 text-sea-blue/10 rotate-45" />
         <Shell className="absolute -bottom-10 right-1/4 w-32 h-32 text-sea-blue/10" />
         <Waves className="absolute bottom-0 left-0 w-full h-32 text-sea-blue/5" />
+      </div>
+
+      {/* Selector de Idioma Flotante Desktop */}
+      <div className="fixed top-6 right-6 z-[60] hidden lg:block">
+        <div className="relative">
+          <button 
+            onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
+            className="bg-white/90 backdrop-blur-md border border-ocean-dark/10 p-3 rounded-full shadow-lg hover:shadow-sea-blue/20 transition-all flex items-center gap-2 group"
+          >
+            <Globe className="w-5 h-5 text-sea-blue group-hover:rotate-12 transition-transform" />
+            <span className="text-xs font-bold uppercase tracking-widest text-ocean-dark">
+              {LANGUAGES.find(l => l.code === selectedLanguage)?.code}
+            </span>
+          </button>
+
+          <AnimatePresence>
+            {isLanguageMenuOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute right-0 mt-3 bg-white border border-ocean-dark/10 rounded-2xl shadow-2xl p-2 min-w-[160px] overflow-hidden"
+              >
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setSelectedLanguage(lang.code);
+                      setIsLanguageMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-colors ${selectedLanguage === lang.code ? 'bg-sea-blue/10 text-sea-blue font-bold' : 'hover:bg-sea-blue-light text-ocean-dark/70'}`}
+                  >
+                    <span className="text-lg">{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Sidebar for Desktop */}
@@ -128,7 +171,7 @@ export default function App() {
               onClick={() => setSelectedCategory('Todos')}
               className={`w-full text-left py-2 px-4 rounded text-sm transition-all ${selectedCategory === 'Todos' ? 'bg-sea-blue text-white font-semibold shadow-md' : 'hover:bg-sea-blue/10 text-ocean-black/80 hover:text-ocean-black'}`}
             >
-              Todos los Manjares
+              {selectedLanguage === 'es' ? 'Todos los Manjares' : 'All Delicacies'}
             </button>
             {CATEGORIES.map(cat => (
               <button 
@@ -147,7 +190,7 @@ export default function App() {
               className="w-full flex items-center justify-center gap-3 bg-ocean-dark text-white py-4 px-6 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-ocean-black transition-all shadow-lg shadow-ocean-dark/20 group"
             >
               <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              Reservar Mesa
+              {selectedLanguage === 'es' ? 'Reservar Mesa' : 'Book a Table'}
             </button>
           </div>
         </div>
@@ -180,7 +223,14 @@ export default function App() {
               </div>
               <h1 className="text-base font-bold tracking-widest uppercase italic text-ocean-dark">La <span className="text-sea-blue not-italic">Carihuela</span></h1>
             </div>
+            
             <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
+                className="p-2 bg-sea-blue-light text-sea-blue rounded-full"
+              >
+                <Globe className="w-5 h-5" />
+              </button>
               <button 
                 onClick={() => setIsReservationOpen(true)}
                 className="p-2.5 bg-sea-blue text-white rounded-full shadow-lg shadow-sea-blue/20"
@@ -190,15 +240,42 @@ export default function App() {
             </div>
           </div>
 
+          <AnimatePresence>
+            {isLanguageMenuOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="lg:hidden w-full bg-white border-b border-ocean-dark/10 p-4 grid grid-cols-3 gap-2 mt-2"
+              >
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setSelectedLanguage(lang.code);
+                      setIsLanguageMenuOpen(false);
+                    }}
+                    className={`flex flex-col items-center p-2 rounded-xl border ${selectedLanguage === lang.code ? 'border-sea-blue bg-sea-blue/5' : 'border-transparent'}`}
+                  >
+                    <span className="text-2xl mb-1">{lang.flag}</span>
+                    <span className="text-[10px] font-bold uppercase">{lang.code}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="hidden lg:block">
-             <h2 className="text-2xl font-serif italic text-ocean-dark">{selectedCategory === 'Todos' ? 'Nuestra Carta' : selectedCategory}</h2>
+             <h2 className="text-2xl font-serif italic text-ocean-dark">
+               {selectedCategory === 'Todos' ? (selectedLanguage === 'es' ? 'Nuestra Carta' : 'Our Menu') : selectedCategory}
+             </h2>
           </div>
 
-          <div className="flex-1 max-w-md mx-auto lg:mx-8 w-full group">
+          <div className="flex-1 max-w-md mx-auto lg:mx-8 w-full group mt-4 lg:mt-0">
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Buscar en la carta..." 
+                placeholder={selectedLanguage === 'es' ? "Buscar en la carta..." : "Search menu..."} 
                 className="w-full bg-sea-blue-light border border-ocean-dark/10 rounded-full py-2 px-6 text-sm focus:outline-none focus:border-sea-blue focus:ring-4 focus:ring-sea-blue/5 transition-all text-ocean-black placeholder:text-ocean-dark/30 shadow-inner"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -252,7 +329,7 @@ export default function App() {
                     onClick={() => { setSelectedCategory('Todos'); setIsMenuOpen(false); }}
                     className={`w-full text-left py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-between ${selectedCategory === 'Todos' ? 'bg-sea-blue text-white font-bold shadow-lg shadow-sea-blue/20' : 'text-ocean-black hover:bg-sea-blue-light'}`}
                   >
-                    Todos los Manjares
+                    {selectedLanguage === 'es' ? 'Todos los Manjares' : 'All Delicacies'}
                     {selectedCategory === 'Todos' && <ChevronRight className="w-4 h-4" />}
                   </button>
                   {CATEGORIES.map(cat => (
@@ -272,7 +349,7 @@ export default function App() {
                     onClick={() => { setIsReservationOpen(true); setIsMenuOpen(false); }}
                     className="w-full bg-ocean-dark text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest"
                   >
-                    Reservar Mesa
+                    {selectedLanguage === 'es' ? 'Reservar Mesa' : 'Book a Table'}
                   </button>
                 </div>
               </motion.div>
@@ -282,7 +359,6 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6 lg:p-10 bg-sea-blue-light/50 relative shadow-inner">
-          {/* Subtle Decorative Waves for background texture */}
           <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-[0.03] z-0">
              <Waves className="w-full h-full text-ocean-dark" />
           </div>
@@ -293,9 +369,13 @@ export default function App() {
              viewport={{ once: true }}
              className="mb-10 text-center lg:text-left"
           >
-             <h2 className="text-4xl md:text-5xl font-serif italic mb-3 text-ocean-black">La <span className="text-sea-blue">Esencia</span> de la Costa</h2>
+             <h2 className="text-4xl md:text-5xl font-serif italic mb-3 text-ocean-black">
+               {selectedLanguage === 'es' ? 'La' : 'The'} <span className="text-sea-blue">{selectedLanguage === 'es' ? 'Esencia' : 'Essence'}</span> {selectedLanguage === 'es' ? 'de la Costa' : 'of the Coast'}
+             </h2>
              <p className="text-sm text-ocean-black/80 max-w-xl font-medium leading-relaxed">
-               De la lonja a su mesa. Disfrute del sabor más auténtico de Almería con nuestra selección diaria de productos locales.
+               {selectedLanguage === 'es' 
+                 ? 'De la lonja a su mesa. Disfrute del sabor más auténtico de Almería con nuestra selección diaria de productos locales.' 
+                 : 'From the market to your table. Enjoy the most authentic flavor of Almería with our daily selection of local products.'}
              </p>
           </motion.div>
 
@@ -334,11 +414,13 @@ export default function App() {
                   >
                   <div className="p-5 flex flex-col flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-2 gap-3">
-                      <h3 className="text-xl font-serif italic tracking-wide text-ocean-black group-hover:text-sea-blue transition-colors">{item.name}</h3>
+                      <h3 className="text-xl font-serif italic tracking-wide text-ocean-black group-hover:text-sea-blue transition-colors">
+                        {item.name[selectedLanguage]}
+                      </h3>
                     </div>
                     
-                    <p className="text-[12px] text-ocean-black/80 mb-4 font-normal leading-relaxed pr-2">
-                      {item.description}
+                    <p className="text-[12px] text-ocean-black/80 mb-4 font-normal leading-relaxed pr-2 flex-1">
+                      {item.description[selectedLanguage]}
                     </p>
 
                     <div className="space-y-4">
@@ -370,12 +452,10 @@ export default function App() {
                   >
                     <img 
                       src={item.image && item.image.trim() !== "" ? item.image : logoPlaceholder} 
-                      alt={item.name}
+                      alt={item.name[selectedLanguage]}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        if (target.src !== logoPlaceholder) {
-                          target.src = logoPlaceholder;
-                        }
+                        if (target.src !== logoPlaceholder) target.src = logoPlaceholder;
                       }}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
                       referrerPolicy="no-referrer"
@@ -391,9 +471,8 @@ export default function App() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
                     <div className="absolute inset-0 bg-ocean-dark/0 group-hover:bg-ocean-dark/10 transition-colors flex items-center justify-center pointer-events-none">
-                       <Search className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                      <Search className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
                     </div>
-                    
                     {item.featured && (
                       <div className="absolute top-2 right-2 p-1.5 bg-gold rounded-full shadow-lg">
                         <Sparkles className="w-3 h-3 text-white" />
@@ -407,219 +486,221 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-        {filteredMenu.length === 0 && (
-          <div className="text-center py-20">
-            <Search className="w-12 h-12 text-gold/20 mx-auto mb-4" />
-            <h3 className="text-lg font-serif text-pearl/40 italic">No hemos encontrado lo que buscas</h3>
-            <button 
-              onClick={() => { setSearchQuery(''); setSelectedCategory('Todos'); }}
-              className="mt-2 text-gold text-sm underline underline-offset-4"
-            >
-              Restablecer carta
-            </button>
-          </div>
-        )}
-      </main>
-      {/* Footer Info */}
-      <footer className="bg-sea-blue-light border-t border-ocean-dark/10 py-16 px-6 mt-20 relative z-10">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
-          <div className="space-y-4">
-             <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Ubicación</h4>
-             <p className="text-ocean-black text-sm leading-loose font-medium">
-               85 Av. de Playa Serena<br/>
-               Roquetas de Mar, Almería<br/>
-               <span className="text-sea-blue font-black tracking-wider">ANDALUCÍA</span>
-             </p>
-          </div>
-          <div className="space-y-4">
-            <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Reservas</h4>
-            <div className="flex items-center justify-center md:justify-start gap-4 text-ocean-black hover:text-sea-blue transition-colors cursor-pointer" onClick={() => setIsReservationOpen(true)}>
-              <Phone className="w-6 h-6" />
-              <p className="text-xl font-serif italic font-bold">+34 647 753 664</p>
-            </div>
-            <p className="text-ocean-dark font-bold text-[10px] uppercase tracking-tighter">Atención 24/7 vía WhatsApp</p>
-          </div>
-          <div className="space-y-4">
-            <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Horario</h4>
-            <p className="text-ocean-black text-sm leading-loose font-medium">
-              Mediodía: 13:00 - 17:00<br/>
-              Cena: 20:00 - 23:30<br/>
-              <span className="text-sea-blue font-bold">Lunes Cerrado</span>
-            </p>
-          </div>
-        </div>
-        <div className="pt-16 mt-16 border-t border-ocean-dark/10 text-center">
-             <p className="text-ocean-black/40 text-[10px] uppercase tracking-[0.4em] font-bold">
-              &copy; 2026 La Carihuela · Excelencia Mediterránea
-            </p>
-        </div>
-      </footer>
-
-      {/* Fullscreen Image View */}
-      <AnimatePresence>
-        {fullscreenImage && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setFullscreenImage(null)}
-              className="absolute inset-0 bg-ocean-black/95 backdrop-blur-xl" 
-            />
-            <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative max-w-5xl w-full max-h-screen p-2"
-            >
-               <button 
-                onClick={() => setFullscreenImage(null)}
-                className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white text-white hover:text-ocean-black rounded-full transition-all border border-white/20"
+          {filteredMenu.length === 0 && (
+            <div className="text-center py-20">
+              <Search className="w-12 h-12 text-gold/20 mx-auto mb-4" />
+              <h3 className="text-lg font-serif text-pearl/40 italic">
+                {selectedLanguage === 'es' ? 'No hemos encontrado lo que buscas' : 'We haven\'t found what you\'re looking for'}
+              </h3>
+              <button 
+                onClick={() => { setSearchQuery(''); setSelectedCategory('Todos'); }}
+                className="mt-2 text-gold text-sm underline underline-offset-4"
               >
-                <X className="w-6 h-6" />
+                {selectedLanguage === 'es' ? 'Restablecer carta' : 'Reset menu'}
               </button>
-               <img 
-                src={fullscreenImage} 
-                alt="Full View" 
-                className="w-full h-full object-contain rounded-xl shadow-2xl shadow-black/50"
-                referrerPolicy="no-referrer"
+            </div>
+          )}
+        </main>
+
+        <footer className="bg-sea-blue-light border-t border-ocean-dark/10 py-16 px-6 mt-20 relative z-10">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
+            <div className="space-y-4">
+               <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Ubicación</h4>
+               <p className="text-ocean-black text-sm leading-loose font-medium">
+                 85 Av. de Playa Serena<br/>
+                 Roquetas de Mar, Almería<br/>
+                 <span className="text-sea-blue font-black tracking-wider">ANDALUCÍA</span>
+               </p>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Reservas</h4>
+              <div className="flex items-center justify-center md:justify-start gap-4 text-ocean-black hover:text-sea-blue transition-colors cursor-pointer" onClick={() => setIsReservationOpen(true)}>
+                <Phone className="w-6 h-6" />
+                <p className="text-xl font-serif italic font-bold">+34 647 753 664</p>
+              </div>
+              <p className="text-ocean-dark font-bold text-[10px] uppercase tracking-tighter">Atención 24/7 vía WhatsApp</p>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-ocean-black font-bold uppercase tracking-widest text-xs mb-6 border-b border-sea-blue pb-4 inline-block">Horario</h4>
+              <p className="text-ocean-black text-sm leading-loose font-medium">
+                Mediodía: 13:00 - 17:00<br/>
+                Cena: 20:00 - 23:30<br/>
+                <span className="text-sea-blue font-bold">Lunes Cerrado</span>
+              </p>
+            </div>
+          </div>
+          <div className="pt-16 mt-16 border-t border-ocean-dark/10 text-center">
+               <p className="text-ocean-black/40 text-[10px] uppercase tracking-[0.4em] font-bold">
+                &copy; 2026 La Carihuela · Excelencia Mediterránea
+              </p>
+          </div>
+        </footer>
+
+        {/* Fullscreen Image View */}
+        <AnimatePresence>
+          {fullscreenImage && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+               <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setFullscreenImage(null)}
+                className="absolute inset-0 bg-ocean-black/95 backdrop-blur-xl" 
               />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              <motion.div 
+                 initial={{ opacity: 0, scale: 0.9 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 exit={{ opacity: 0, scale: 0.9 }}
+                 className="relative max-w-5xl w-full max-h-screen p-2"
+              >
+                 <button 
+                  onClick={() => setFullscreenImage(null)}
+                  className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white text-white hover:text-ocean-black rounded-full transition-all border border-white/20"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <img 
+                  src={fullscreenImage} 
+                  alt="Full View" 
+                  className="w-full h-full object-contain rounded-xl shadow-2xl shadow-black/50"
+                  referrerPolicy="no-referrer"
+                />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-      {/* Reservation Modal */}
-      <AnimatePresence>
-        {isReservationOpen && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 overflow-y-auto">
-             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsReservationOpen(false)}
-              className="absolute inset-0 bg-sea-blue/90 backdrop-blur-md" 
-            />
-            <motion.div 
-               initial={{ opacity: 0, y: 50 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, y: 50 }}
-               className="relative bg-white rounded-3xl w-full max-w-lg p-8 lg:p-12 shadow-2xl overflow-hidden"
-            >
-               <div className="absolute top-0 right-0 w-32 h-32 bg-sea-blue-light/50 -rotate-45 translate-x-16 -translate-y-16 rounded-3xl" />
-               
-               <div className="relative z-10">
-                 <div className="flex justify-between items-center mb-10">
-                    <div>
-                      <h3 className="text-3xl font-serif italic text-ocean-dark mb-1">Reserva de Mesa</h3>
-                      <p className="text-xs text-ocean-dark/60 tracking-wider">Gestione su velada en La Carihuela</p>
-                    </div>
-                    <button 
-                      onClick={() => setIsReservationOpen(false)}
-                      className="p-2 hover:bg-sea-blue-light rounded-full text-ocean-dark/30 transition-colors"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
-                 </div>
+        {/* Reservation Modal */}
+        <AnimatePresence>
+          {isReservationOpen && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 overflow-y-auto">
+               <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsReservationOpen(false)}
+                className="absolute inset-0 bg-sea-blue/90 backdrop-blur-md" 
+              />
+              <motion.div 
+                 initial={{ opacity: 0, y: 50 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: 50 }}
+                 className="relative bg-white rounded-3xl w-full max-w-lg p-8 lg:p-12 shadow-2xl overflow-hidden"
+              >
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-sea-blue-light/50 -rotate-45 translate-x-16 -translate-y-16 rounded-3xl" />
+                 
+                 <div className="relative z-10">
+                   <div className="flex justify-between items-center mb-10">
+                      <div>
+                        <h3 className="text-3xl font-serif italic text-ocean-dark mb-1">Reserva de Mesa</h3>
+                        <p className="text-xs text-ocean-dark/60 tracking-wider">Gestione su velada en La Carihuela</p>
+                      </div>
+                      <button 
+                        onClick={() => setIsReservationOpen(false)}
+                        className="p-2 hover:bg-sea-blue-light rounded-full text-ocean-dark/30 transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                   </div>
 
-                 <div className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Nombre y Apellidos</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ej. Juan Pérez"
-                        className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all"
-                        value={resData.name}
-                        onChange={(e) => setResData({...resData, name: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Fecha</label>
-                        <div className="relative">
-                          <input 
-                            type="date" 
-                            className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all pr-12"
-                            value={resData.date}
-                            onChange={(e) => setResData({...resData, date: e.target.value})}
-                          />
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Nombre y Apellidos</label>
+                        <input 
+                          type="text" 
+                          placeholder="Ej. Juan Pérez"
+                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all"
+                          value={resData.name}
+                          onChange={(e) => setResData({...resData, name: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Fecha</label>
+                          <div className="relative">
+                            <input 
+                              type="date" 
+                              className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all pr-12"
+                              value={resData.date}
+                              onChange={(e) => setResData({...resData, date: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Hora</label>
+                          <select 
+                            className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all appearance-none"
+                            value={resData.time}
+                            onChange={(e) => setResData({...resData, time: e.target.value})}
+                          >
+                            <optgroup label="Almuerzo">
+                              <option value="13:00">13:00</option>
+                              <option value="13:30">13:30</option>
+                              <option value="14:00">14:00</option>
+                              <option value="14:30">14:30</option>
+                            </optgroup>
+                            <optgroup label="Cena">
+                              <option value="20:00">20:00</option>
+                              <option value="20:30">20:30</option>
+                              <option value="21:00">21:00</option>
+                              <option value="21:30">21:30</option>
+                            </optgroup>
+                          </select>
                         </div>
                       </div>
+
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Hora</label>
-                        <select 
-                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all appearance-none"
-                          value={resData.time}
-                          onChange={(e) => setResData({...resData, time: e.target.value})}
-                        >
-                          <optgroup label="Almuerzo">
-                            <option value="13:00">13:00</option>
-                            <option value="13:30">13:30</option>
-                            <option value="14:00">14:00</option>
-                            <option value="14:30">14:30</option>
-                          </optgroup>
-                          <optgroup label="Cena">
-                            <option value="20:00">20:00</option>
-                            <option value="20:30">20:30</option>
-                            <option value="21:00">21:00</option>
-                            <option value="21:30">21:30</option>
-                          </optgroup>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Comensales</label>
-                      <div className="flex items-center justify-between bg-sea-blue-light border border-sea-blue/10 rounded-xl p-2 px-6">
-                        <button 
-                          onClick={() => setResData({...resData, guests: Math.max(1, resData.guests - 1)})}
-                          className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-ocean-dark/40" />
-                          <span className="text-xl font-bold text-ocean-dark">{resData.guests}</span>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Comensales</label>
+                        <div className="flex items-center justify-between bg-sea-blue-light border border-sea-blue/10 rounded-xl p-2 px-6">
+                          <button 
+                            onClick={() => setResData({...resData, guests: Math.max(1, resData.guests - 1)})}
+                            className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-ocean-dark/40" />
+                            <span className="text-xl font-bold text-ocean-dark">{resData.guests}</span>
+                          </div>
+                          <button 
+                            onClick={() => setResData({...resData, guests: resData.guests + 1})}
+                            className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => setResData({...resData, guests: resData.guests + 1})}
-                          className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-sea-blue/10 text-sea-blue hover:bg-sea-blue hover:text-white transition-all"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Mensaje Extra (Opcional)</label>
-                      <textarea 
-                        placeholder="Ej. Aniversario, intolerancias específicas..."
-                        className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all h-24 resize-none"
-                        value={resData.message}
-                        onChange={(e) => setResData({...resData, message: e.target.value})}
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-ocean-dark/40 ml-1">Mensaje Extra (Opcional)</label>
+                        <textarea 
+                          placeholder="Ej. Aniversario, intolerancias específicas..."
+                          className="w-full bg-sea-blue-light border border-sea-blue/10 rounded-xl py-3.5 px-5 text-sm focus:outline-none focus:border-sea-blue transition-all h-24 resize-none"
+                          value={resData.message}
+                          onChange={(e) => setResData({...resData, message: e.target.value})}
+                        />
+                      </div>
 
-                    <button 
-                      onClick={sendWhatsApp}
-                      disabled={!resData.name || !resData.date}
-                      className={`w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-bold uppercase tracking-[0.2em] transition-all shadow-xl text-sm ${resData.name && resData.date ? 'bg-[#25D366] text-white hover:scale-[1.02] shadow-green-500/20' : 'bg-ocean-dark/10 text-ocean-dark/30 cursor-not-allowed'}`}
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      Enviar Vía WhatsApp
-                    </button>
+                      <button 
+                        onClick={sendWhatsApp}
+                        disabled={!resData.name || !resData.date}
+                        className={`w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-bold uppercase tracking-[0.2em] transition-all shadow-xl text-sm ${resData.name && resData.date ? 'bg-[#25D366] text-white hover:scale-[1.02] shadow-green-500/20' : 'bg-ocean-dark/10 text-ocean-dark/30 cursor-not-allowed'}`}
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        Enviar Vía WhatsApp
+                      </button>
 
-                    <p className="text-[9px] text-center text-ocean-dark/30 uppercase tracking-widest italic pt-4">
-                      Será redirigido automáticamente a la aplicación WhatsApp
-                    </p>
+                      <p className="text-[9px] text-center text-ocean-dark/30 uppercase tracking-widest italic pt-4">
+                        Será redirigido automáticamente a la aplicación WhatsApp
+                      </p>
+                   </div>
                  </div>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
-  </div>
-);
+  );
 }
